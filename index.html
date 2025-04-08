@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR CAD Demo</title>
+    <!-- Include <model-viewer> from a CDN -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+    <style>
+      /* Basic CSS to make the model viewer fullscreen */
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: #f0f0f0;
+      }
+      model-viewer {
+        width: 100%;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Model-Viewer element to display the CAD model with AR support -->
+    <model-viewer src="models/my-cad-model.glb"
+                  alt="CAD Model Demo"
+                  auto-rotate
+                  camera-controls
+                  ar
+                  ar-modes="scene-viewer quick-look">
+    </model-viewer>
+  </body>
+</html>
