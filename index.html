@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR CAD Demo – Renamed Built-In Button</title>
-    <!-- A-Frame Library -->
+    <title>AR CAD Demo – Persistent Model Re-Attachment</title>
+    <!-- Include A-Frame Library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- AR.js for A-Frame -->
+    <!-- Include AR.js for A-Frame -->
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      /* Full-page styling */
+      /* Full-window styles */
       body, html {
         margin: 0;
         padding: 0;
@@ -18,8 +18,7 @@
         height: 100%;
         background-color: #f0f0f0;
       }
-
-      /* A simple marker detection indicator (top-right) */
+      /* Fixed marker detection indicator */
       #marker-indicator {
         position: fixed;
         top: 20px;
@@ -31,82 +30,88 @@
         border-radius: 4px;
         z-index: 1000;
       }
-
-      /* 
-         Override the default VR button styling:
-         1) Center the button.
-         2) Make it bigger.
-         3) Hide the VR icon SVG. 
-      */
-      .a-enter-vr-button {
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        width: auto !important;
-        height: auto !important;
-        padding: 20px 40px !important;
-        font-size: 24px !important;
-        text-align: center !important;
-        z-index: 9999 !important;
-        background: #007bff !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 6px !important;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        cursor: pointer;
-      }
-      /* Hide the default VR icon */
-      .a-enter-vr-button .fullscreen,
-      .a-enter-vr-button .vr-icon {
-        display: none !important;
-      }
     </style>
   </head>
   <body>
-    <!-- Marker detection status -->
+    <!-- Indicator to display marker status -->
     <div id="marker-indicator">Marker not detected</div>
 
-    <!-- A-Frame scene with AR.js 
-         (Note: We do NOT disable the VR/AR button, so it shows by default) -->
-    <a-scene
-      embedded
-      arjs="trackingMethod: best; debugUIEnabled: false;"
-      vr-mode-ui="enabled: true"
-    >
-      <!-- Hiro marker (default AR.js preset) -->
-      <a-marker preset="hiro" id="hiroMarker">
-        <!-- Sample model. Adjust path/scale/rotation as needed. -->
-        <a-entity
-          gltf-model="url(models/my-cad-model.glb)"
-          scale="1 1 1"
-          rotation="0 180 0"
-        ></a-entity>
-      </a-marker>
+    <!-- A-Frame scene with AR.js enabled -->
+    <a-scene id="scene" embedded arjs="trackingMethod: best; debugUIEnabled: false;" vr-mode-ui="enabled: true">
+      <!-- Hiro marker definition -->
+      <a-marker preset="hiro" id="hiroMarker"></a-marker>
       <!-- Standard camera -->
       <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      // 1. Change the default VR button text to "Enter AR" (or any custom label).
-      // 2. Listen for marker detection events to update the indicator text.
-      window.addEventListener("load", function () {
-        // Rename the VR button text:
-        const button = document.querySelector(".a-enter-vr-button");
-        if (button) {
-          button.textContent = "Enter AR";
-        }
-
-        // Marker detection logic:
+      // Wait for the scene to load completely.
+      window.addEventListener("load", function() {
+        var sceneEl = document.getElementById("scene");
         var marker = document.getElementById("hiroMarker");
         var indicator = document.getElementById("marker-indicator");
 
-        marker.addEventListener("markerFound", function () {
+        // Create and append the model to the scene initially.
+        var modelEntity = document.createElement("a-entity");
+        modelEntity.setAttribute("id", "model");
+        modelEntity.setAttribute("gltf-model", "url(models/my-cad-model.glb)");
+        modelEntity.setAttribute("scale", "1 1 1");
+        modelEntity.setAttribute("rotation", "0 180 0");
+        // Set an initial default position (e.g., 3 units in front of the camera).
+        modelEntity.setAttribute("position", "0 0 -3");
+        sceneEl.appendChild(modelEntity);
+
+        // Helper: reparent an entity while preserving its world transform.
+        function reparentPreserve(el, newParent) {
+          var obj3D = el.object3D;
+          // Update its world matrix.
+          obj3D.updateMatrixWorld(true);
+
+          // Get world transform.
+          var worldPos = new THREE.Vector3();
+          var worldQuat = new THREE.Quaternion();
+          var worldScale = new THREE.Vector3();
+          obj3D.matrixWorld.decompose(worldPos, worldQuat, worldScale);
+
+          // Remove el from current parent.
+          el.parentNode.removeChild(el);
+          // Append el to new parent.
+          newParent.appendChild(el);
+
+          // Compute the new local transform relative to the new parent's world matrix.
+          newParent.object3D.updateMatrixWorld(true);
+          var parentInverse = new THREE.Matrix4().getInverse(newParent.object3D.matrixWorld);
+          var newLocalMatrix = new THREE.Matrix4().compose(worldPos, worldQuat, worldScale);
+          newLocalMatrix.multiplyMatrices(parentInverse, newLocalMatrix);
+
+          // Decompose the new local matrix.
+          var newPos = new THREE.Vector3(), newQuat = new THREE.Quaternion(), newScale = new THREE.Vector3();
+          newLocalMatrix.decompose(newPos, newQuat, newScale);
+
+          // Set the local transform attributes.
+          el.setAttribute("position", newPos);
+          // Set rotation: convert quaternion to Euler angles.
+          var euler = new THREE.Euler().setFromQuaternion(newQuat, 'YXZ');
+          // Format the Euler values as a string.
+          el.setAttribute("rotation", THREE.Math.radToDeg(euler.x) + " " + THREE.Math.radToDeg(euler.y) + " " + THREE.Math.radToDeg(euler.z));
+          el.setAttribute("scale", newScale);
+        }
+
+        // When the marker is detected, attach (reparent) the model to the marker.
+        marker.addEventListener("markerFound", function() {
           indicator.innerText = "Marker detected!";
+          // Reparent modelEntity to the marker if not already a child.
+          if (modelEntity.parentNode !== marker) {
+            reparentPreserve(modelEntity, marker);
+          }
         });
 
-        marker.addEventListener("markerLost", function () {
+        // When the marker is lost, reattach the model back to the scene.
+        marker.addEventListener("markerLost", function() {
           indicator.innerText = "Marker not detected";
+          if (modelEntity.parentNode === marker) {
+            reparentPreserve(modelEntity, sceneEl);
+          }
         });
       });
     </script>
