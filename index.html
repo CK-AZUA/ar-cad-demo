@@ -3,45 +3,23 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR CAD Demo – Marker-Based AR with Cover</title>
-    <!-- Include A-Frame Library -->
+    <title>AR CAD Demo – Renamed Built-In Button</title>
+    <!-- A-Frame Library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-    <!-- Include AR.js for A-Frame -->
+    <!-- AR.js for A-Frame -->
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      /* Ensure the entire page fills the viewport */
-      body,
-      html {
+      /* Full-page styling */
+      body, html {
         margin: 0;
         padding: 0;
         overflow: hidden;
+        width: 100%;
+        height: 100%;
         background-color: #f0f0f0;
-        width: 100%;
-        height: 100%;
       }
-      /* Fullscreen overlay cover with the Start AR button */
-      #cover {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 10001;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-      }
-      #startAR {
-        padding: 15px 30px;
-        font-size: 18px;
-        background: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-      }
-      /* Marker detection indicator styling */
+
+      /* A simple marker detection indicator (top-right) */
       #marker-indicator {
         position: fixed;
         top: 20px;
@@ -51,54 +29,75 @@
         background: rgba(0, 0, 0, 0.6);
         color: #fff;
         border-radius: 4px;
-        z-index: 10002;
+        z-index: 1000;
       }
-      /* Ensure the A-Frame scene is at a lower z-index */
-      a-scene {
-        position: relative;
-        z-index: 0;
+
+      /* 
+         Override the default VR button styling:
+         1) Center the button.
+         2) Make it bigger.
+         3) Hide the VR icon SVG. 
+      */
+      .a-enter-vr-button {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        width: auto !important;
+        height: auto !important;
+        padding: 20px 40px !important;
+        font-size: 24px !important;
+        text-align: center !important;
+        z-index: 9999 !important;
+        background: #007bff !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+      }
+      /* Hide the default VR icon */
+      .a-enter-vr-button .fullscreen,
+      .a-enter-vr-button .vr-icon {
+        display: none !important;
       }
     </style>
   </head>
   <body>
-    <!-- Fullscreen cover with custom Start AR button -->
-    <div id="cover">
-      <button id="startAR">Start AR</button>
-    </div>
-    <!-- Marker detection indicator -->
+    <!-- Marker detection status -->
     <div id="marker-indicator">Marker not detected</div>
 
-    <!-- A-Frame Scene with AR.js (always visible so it initializes) -->
-    <!-- VR mode UI is disabled -->
+    <!-- A-Frame scene with AR.js 
+         (Note: We do NOT disable the VR/AR button, so it shows by default) -->
     <a-scene
-      id="scene"
       embedded
       arjs="trackingMethod: best; debugUIEnabled: false;"
-      vr-mode-ui="enabled: false"
+      vr-mode-ui="enabled: true"
     >
-      <!-- Define the marker using the Hiro preset -->
+      <!-- Hiro marker (default AR.js preset) -->
       <a-marker preset="hiro" id="hiroMarker">
-        <!-- GLB model entity; adjust scale/rotation as needed -->
+        <!-- Sample model. Adjust path/scale/rotation as needed. -->
         <a-entity
-          id="model"
           gltf-model="url(models/my-cad-model.glb)"
           scale="1 1 1"
           rotation="0 180 0"
         ></a-entity>
       </a-marker>
-      <!-- Basic camera -->
+      <!-- Standard camera -->
       <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      // When the Start AR button is tapped, remove the overlay cover.
-      document.getElementById("startAR").addEventListener("click", function () {
-        var cover = document.getElementById("cover");
-        cover.parentNode.removeChild(cover);
-      });
-
-      // Wait until the scene is loaded before setting up marker detection events.
+      // 1. Change the default VR button text to "Enter AR" (or any custom label).
+      // 2. Listen for marker detection events to update the indicator text.
       window.addEventListener("load", function () {
+        // Rename the VR button text:
+        const button = document.querySelector(".a-enter-vr-button");
+        if (button) {
+          button.textContent = "Enter AR";
+        }
+
+        // Marker detection logic:
         var marker = document.getElementById("hiroMarker");
         var indicator = document.getElementById("marker-indicator");
 
