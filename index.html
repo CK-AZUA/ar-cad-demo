@@ -35,7 +35,7 @@
       /* Style for the marker detection indicator */
       #marker-indicator {
         position: fixed;
-        z-index: 10000; /* High z-index to stay on top */
+        z-index: 10000; /* Very high to ensure it remains on top */
         top: 20px;
         right: 20px;
         padding: 10px 20px;
@@ -44,7 +44,7 @@
         color: #fff;
         border-radius: 4px;
       }
-      /* Ensure the a-scene has its own layer */
+      /* Ensure the a-scene has its own stacking context */
       a-scene {
         position: relative;
         z-index: 1;
@@ -58,10 +58,19 @@
     <div id="marker-indicator">Marker not detected</div>
     
     <!-- A-Frame Scene with AR.js, initially hidden -->
-    <a-scene id="scene" embedded arjs="trackingMethod: best;" style="display: none;">
-      <!-- Define a marker using the default "hiro" preset -->
+    <!-- The scene has the following attributes: 
+         - arjs: disables the debug UI
+         - vr-mode-ui: disables the default VR/AR enter button -->
+    <a-scene
+      id="scene"
+      embedded
+      arjs="trackingMethod: best; debugUIEnabled: false;"
+      vr-mode-ui="enabled: false"
+      style="display: none;"
+    >
+      <!-- Define the marker using the default 'hiro' preset -->
       <a-marker preset="hiro" id="hiroMarker">
-        <!-- 3D model entity; adjust scale/rotation as needed -->
+        <!-- Load your GLB model -->
         <a-entity gltf-model="url(models/my-cad-model.glb)"
                   scale="1 1 1"
                   rotation="0 180 0">
@@ -72,23 +81,23 @@
     </a-scene>
     
     <script>
-      // Ensure a user gesture triggers AR, satisfying camera access requirements.
+      // Activate AR only on user interaction to satisfy mobile browser permissions.
       document.getElementById('startAR').addEventListener('click', function() {
         document.getElementById('scene').style.display = 'block';
         this.style.display = 'none';
       });
       
-      // Once the scene loads, attach event listeners for marker detection.
+      // Once the scene is loaded, set up marker detection event listeners.
       window.addEventListener('load', function() {
         var marker = document.getElementById('hiroMarker');
         var indicator = document.getElementById('marker-indicator');
         
-        // When the marker is found, update the indicator.
+        // When the marker is found, update the indicator text.
         marker.addEventListener('markerFound', function() {
           indicator.innerText = "Marker detected!";
         });
         
-        // When the marker is lost, update the indicator.
+        // When the marker is lost, reset the indicator text.
         marker.addEventListener('markerLost', function() {
           indicator.innerText = "Marker not detected";
         });
@@ -96,3 +105,4 @@
     </script>
   </body>
 </html>
+
