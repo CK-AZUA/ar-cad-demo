@@ -9,7 +9,7 @@
     <!-- Include AR.js for A-Frame -->
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      /* Fullscreen styling */
+      /* Ensure the page fills the viewport */
       body, html {
         margin: 0;
         padding: 0;
@@ -18,9 +18,9 @@
         width: 100%;
         height: 100%;
       }
-      /* Start Button Styling */
+      /* Style for the Start AR button */
       #startAR {
-        position: absolute;
+        position: fixed;
         z-index: 9999;
         top: 20px;
         left: 20px;
@@ -30,11 +30,12 @@
         color: #fff;
         border: none;
         border-radius: 4px;
+        cursor: pointer;
       }
-      /* Marker Indicator Styling */
+      /* Style for the marker detection indicator */
       #marker-indicator {
-        position: absolute;
-        z-index: 9999;
+        position: fixed;
+        z-index: 10000; /* High z-index to stay on top */
         top: 20px;
         right: 20px;
         padding: 10px 20px;
@@ -43,41 +44,46 @@
         color: #fff;
         border-radius: 4px;
       }
+      /* Ensure the a-scene has its own layer */
+      a-scene {
+        position: relative;
+        z-index: 1;
+      }
     </style>
   </head>
   <body>
-    <!-- Start AR Button for initiating camera access -->
+    <!-- Start AR Button to trigger camera access -->
     <button id="startAR">Start AR</button>
-    <!-- Marker status indicator -->
+    <!-- Marker detection indicator that remains visible -->
     <div id="marker-indicator">Marker not detected</div>
     
-    <!-- A-Frame Scene configured for AR.js marker-based AR (initially hidden) -->
+    <!-- A-Frame Scene with AR.js, initially hidden -->
     <a-scene id="scene" embedded arjs="trackingMethod: best;" style="display: none;">
-      <!-- Define a marker using the default 'hiro' preset -->
+      <!-- Define a marker using the default "hiro" preset -->
       <a-marker preset="hiro" id="hiroMarker">
-        <!-- Load your GLB model -->
+        <!-- 3D model entity; adjust scale/rotation as needed -->
         <a-entity gltf-model="url(models/my-cad-model.glb)"
                   scale="1 1 1"
                   rotation="0 180 0">
         </a-entity>
       </a-marker>
-      <!-- Basic camera -->
+      <!-- Basic camera setup -->
       <a-entity camera></a-entity>
     </a-scene>
     
     <script>
-      // Show AR scene on user tap to satisfy camera permission requirements.
+      // Ensure a user gesture triggers AR, satisfying camera access requirements.
       document.getElementById('startAR').addEventListener('click', function() {
         document.getElementById('scene').style.display = 'block';
         this.style.display = 'none';
       });
       
-      // Wait for the scene to load before adding marker event listeners.
+      // Once the scene loads, attach event listeners for marker detection.
       window.addEventListener('load', function() {
         var marker = document.getElementById('hiroMarker');
         var indicator = document.getElementById('marker-indicator');
         
-        // When the marker is detected, update the indicator.
+        // When the marker is found, update the indicator.
         marker.addEventListener('markerFound', function() {
           indicator.innerText = "Marker detected!";
         });
@@ -90,4 +96,3 @@
     </script>
   </body>
 </html>
-
