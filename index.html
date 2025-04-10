@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR CAD Demo – Persistent Model on Marker Detection</title>
+    <title>AR CAD Demo – Marker-Based AR with Cover</title>
     <!-- Include A-Frame Library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <!-- Include AR.js for A-Frame -->
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      /* Make sure the page fills the viewport */
+      /* Ensure the entire page fills the viewport */
       body,
       html {
         margin: 0;
@@ -19,24 +19,31 @@
         width: 100%;
         height: 100%;
       }
-      /* Style for the Start AR button */
-      #startAR {
+      /* Fullscreen overlay cover with the Start AR button */
+      #cover {
         position: fixed;
-        z-index: 9999;
-        top: 20px;
-        left: 20px;
-        padding: 10px 20px;
-        font-size: 16px;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10001;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      #startAR {
+        padding: 15px 30px;
+        font-size: 18px;
         background: #007bff;
         color: #fff;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         cursor: pointer;
       }
-      /* Style for the marker detection indicator */
+      /* Marker detection indicator styling */
       #marker-indicator {
         position: fixed;
-        z-index: 10000; /* Ensure it stays on top */
         top: 20px;
         right: 20px;
         padding: 10px 20px;
@@ -44,13 +51,9 @@
         background: rgba(0, 0, 0, 0.6);
         color: #fff;
         border-radius: 4px;
+        z-index: 10002;
       }
-      /* Lower the canvas z-index so the indicator is visible */
-      a-scene canvas {
-        position: relative;
-        z-index: 0 !important;
-      }
-      /* Ensure the a-scene itself doesn't overlap our UI */
+      /* Ensure the A-Frame scene is at a lower z-index */
       a-scene {
         position: relative;
         z-index: 0;
@@ -58,23 +61,24 @@
     </style>
   </head>
   <body>
-    <!-- Custom Start AR Button (required for mobile camera permission) -->
-    <button id="startAR">Start AR</button>
-    <!-- Fixed marker detection indicator -->
+    <!-- Fullscreen cover with custom Start AR button -->
+    <div id="cover">
+      <button id="startAR">Start AR</button>
+    </div>
+    <!-- Marker detection indicator -->
     <div id="marker-indicator">Marker not detected</div>
 
-    <!-- A-Frame Scene with AR.js; initially hidden -->
-    <!-- Default AR UI is disabled: debug UI and VR/AR button -->
+    <!-- A-Frame Scene with AR.js (always visible so it initializes) -->
+    <!-- VR mode UI is disabled -->
     <a-scene
       id="scene"
       embedded
       arjs="trackingMethod: best; debugUIEnabled: false;"
       vr-mode-ui="enabled: false"
-      style="display: none;"
     >
-      <!-- Define the marker using the default 'hiro' preset -->
+      <!-- Define the marker using the Hiro preset -->
       <a-marker preset="hiro" id="hiroMarker">
-        <!-- Load your GLB model inside the marker -->
+        <!-- GLB model entity; adjust scale/rotation as needed -->
         <a-entity
           id="model"
           gltf-model="url(models/my-cad-model.glb)"
@@ -82,46 +86,26 @@
           rotation="0 180 0"
         ></a-entity>
       </a-marker>
-      <!-- Basic camera setup -->
+      <!-- Basic camera -->
       <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      // Wait for the user to tap Start AR to trigger camera access.
+      // When the Start AR button is tapped, remove the overlay cover.
       document.getElementById("startAR").addEventListener("click", function () {
-        document.getElementById("scene").style.display = "block";
-        this.style.display = "none";
+        var cover = document.getElementById("cover");
+        cover.parentNode.removeChild(cover);
       });
 
-      // After the scene loads, set up marker event listeners.
+      // Wait until the scene is loaded before setting up marker detection events.
       window.addEventListener("load", function () {
         var marker = document.getElementById("hiroMarker");
         var indicator = document.getElementById("marker-indicator");
-        var model = document.getElementById("model");
-        var scene = document.getElementById("scene");
 
-        // When the marker is detected, update the indicator text
-        // and detach the model from the marker so that it remains anchored.
         marker.addEventListener("markerFound", function () {
           indicator.innerText = "Marker detected!";
-          // If the model is still a child of the marker, detach it.
-          if (model.parentElement === marker) {
-            // Copy the marker's world transformation to the model.
-            var markerObj = marker.object3D;
-            var modelObj = model.object3D;
-            modelObj.matrix.copy(markerObj.matrixWorld);
-            modelObj.matrix.decompose(
-              modelObj.position,
-              modelObj.quaternion,
-              modelObj.scale
-            );
-            // Remove model from marker and attach it directly to the scene.
-            marker.removeChild(model);
-            scene.appendChild(model);
-          }
         });
 
-        // When the marker is lost, update the indicator text.
         marker.addEventListener("markerLost", function () {
           indicator.innerText = "Marker not detected";
         });
