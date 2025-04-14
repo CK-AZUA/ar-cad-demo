@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR CAD Demo – Persistent Model Re-Attachment Fixed</title>
+    <title>AR CAD Demo – Using Explicit Hiro Pattern</title>
     <!-- Include A-Frame Library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <!-- Include AR.js for A-Frame -->
@@ -33,13 +33,13 @@
     </style>
   </head>
   <body>
-    <!-- Indicator to display marker status -->
+    <!-- Marker detection indicator -->
     <div id="marker-indicator">Marker not detected</div>
 
     <!-- A-Frame scene with AR.js enabled -->
     <a-scene id="scene" embedded arjs="trackingMethod: best; debugUIEnabled: true;" vr-mode-ui="enabled: true">
-      <!-- Define the marker (using the Hiro preset) -->
-      <a-marker preset="hiro" id="hiroMarker"></a-marker>
+      <!-- Explicitly reference the Hiro marker pattern file -->
+      <a-marker type="pattern" url="pattern-hiro.patt" id="hiroMarker"></a-marker>
       <!-- Standard camera -->
       <a-entity camera></a-entity>
     </a-scene>
@@ -48,42 +48,26 @@
       // Helper function: reparent an entity while preserving its world transform.
       function reparentPreserve(el, newParent) {
         var obj3D = el.object3D;
-        // Update world matrix.
         obj3D.updateMatrixWorld(true);
-
-        // Extract the world transform.
         var worldPos = new THREE.Vector3();
         var worldQuat = new THREE.Quaternion();
         var worldScale = new THREE.Vector3();
         obj3D.matrixWorld.decompose(worldPos, worldQuat, worldScale);
-
-        // Remove element from its current parent.
         el.parentNode.removeChild(el);
-        // Append element to the new parent.
         newParent.appendChild(el);
-
-        // Update new parent's world matrix.
         newParent.object3D.updateMatrixWorld(true);
-        // Compute the new local matrix.
         var parentInverse = new THREE.Matrix4().getInverse(newParent.object3D.matrixWorld);
         var newLocalMatrix = new THREE.Matrix4().compose(worldPos, worldQuat, worldScale);
         newLocalMatrix.multiplyMatrices(parentInverse, newLocalMatrix);
-
-        // Decompose the new local matrix.
         var newPos = new THREE.Vector3(), newQuat = new THREE.Quaternion(), newScale = new THREE.Vector3();
         newLocalMatrix.decompose(newPos, newQuat, newScale);
-
-        // Set the local transform attributes.
         el.setAttribute("position", newPos);
         var euler = new THREE.Euler().setFromQuaternion(newQuat, "YXZ");
-        el.setAttribute(
-          "rotation",
-          THREE.Math.radToDeg(euler.x) + " " + THREE.Math.radToDeg(euler.y) + " " + THREE.Math.radToDeg(euler.z)
-        );
+        el.setAttribute("rotation", THREE.Math.radToDeg(euler.x) + " " + THREE.Math.radToDeg(euler.y) + " " + THREE.Math.radToDeg(euler.z));
         el.setAttribute("scale", newScale);
       }
 
-      // Wait for the scene to be fully loaded before attaching events.
+      // Wait for the A-Frame scene to load before adding marker event listeners.
       document.querySelector("a-scene").addEventListener("loaded", function () {
         console.log("Scene loaded.");
         var sceneEl = document.getElementById("scene");
@@ -96,7 +80,7 @@
         modelEntity.setAttribute("gltf-model", "url(models/my-cad-model.glb)");
         modelEntity.setAttribute("scale", "1 1 1");
         modelEntity.setAttribute("rotation", "0 180 0");
-        // Set a default position so the model is visible immediately.
+        // Set default position to ensure the model is visible.
         modelEntity.setAttribute("position", "0 0 -3");
         sceneEl.appendChild(modelEntity);
 
