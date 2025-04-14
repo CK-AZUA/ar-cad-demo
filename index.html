@@ -3,14 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AR CAD Demo – Using Explicit Hiro Pattern</title>
+    <title>AR.js Blank Plane with Hiro Marker</title>
     <!-- Include A-Frame Library -->
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <!-- Include AR.js for A-Frame -->
     <script src="https://cdn.jsdelivr.net/gh/jeromeetienne/AR.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
     <style>
-      /* Full-window styles */
-      body, html {
+      /* Full-window styling to use the entire viewport */
+      body,
+      html {
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -18,90 +19,22 @@
         height: 100%;
         background-color: #f0f0f0;
       }
-      /* Fixed marker detection indicator */
-      #marker-indicator {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 10px 20px;
-        font-size: 16px;
-        background: rgba(0, 0, 0, 0.6);
-        color: #fff;
-        border-radius: 4px;
-        z-index: 1000;
-      }
     </style>
   </head>
   <body>
-    <!-- Marker detection indicator -->
-    <div id="marker-indicator">Marker not detected</div>
-
     <!-- A-Frame scene with AR.js enabled -->
-    <a-scene id="scene" embedded arjs="trackingMethod: best; debugUIEnabled: true;" vr-mode-ui="enabled: true">
-      <!-- Explicitly reference the Hiro marker pattern file -->
-      <a-marker type="pattern" url="pattern-hiro.patt" id="hiroMarker"></a-marker>
+    <a-scene embedded arjs="trackingMethod: best;">
+      <!-- Use the built-in Hiro marker preset -->
+      <a-marker preset="hiro">
+        <!-- A blank plane attached to the marker
+             - position "0 0 0" centers the plane on the marker
+             - rotation "-90 0 0" rotates the plane so its surface is horizontal
+             - width and height define its size; adjust as needed
+             - material properties for color and opacity -->
+        <a-plane position="0 0 0" rotation="-90 0 0" width="1" height="1" material="color:blue; opacity:0.5"></a-plane>
+      </a-marker>
       <!-- Standard camera -->
       <a-entity camera></a-entity>
     </a-scene>
-
-    <script>
-      // Helper function: reparent an entity while preserving its world transform.
-      function reparentPreserve(el, newParent) {
-        var obj3D = el.object3D;
-        obj3D.updateMatrixWorld(true);
-        var worldPos = new THREE.Vector3();
-        var worldQuat = new THREE.Quaternion();
-        var worldScale = new THREE.Vector3();
-        obj3D.matrixWorld.decompose(worldPos, worldQuat, worldScale);
-        el.parentNode.removeChild(el);
-        newParent.appendChild(el);
-        newParent.object3D.updateMatrixWorld(true);
-        var parentInverse = new THREE.Matrix4().getInverse(newParent.object3D.matrixWorld);
-        var newLocalMatrix = new THREE.Matrix4().compose(worldPos, worldQuat, worldScale);
-        newLocalMatrix.multiplyMatrices(parentInverse, newLocalMatrix);
-        var newPos = new THREE.Vector3(), newQuat = new THREE.Quaternion(), newScale = new THREE.Vector3();
-        newLocalMatrix.decompose(newPos, newQuat, newScale);
-        el.setAttribute("position", newPos);
-        var euler = new THREE.Euler().setFromQuaternion(newQuat, "YXZ");
-        el.setAttribute("rotation", THREE.Math.radToDeg(euler.x) + " " + THREE.Math.radToDeg(euler.y) + " " + THREE.Math.radToDeg(euler.z));
-        el.setAttribute("scale", newScale);
-      }
-
-      // Wait for the A-Frame scene to load before adding marker event listeners.
-      document.querySelector("a-scene").addEventListener("loaded", function () {
-        console.log("Scene loaded.");
-        var sceneEl = document.getElementById("scene");
-        var marker = document.getElementById("hiroMarker");
-        var indicator = document.getElementById("marker-indicator");
-
-        // Create and append the model entity to the scene initially.
-        var modelEntity = document.createElement("a-entity");
-        modelEntity.setAttribute("id", "model");
-        modelEntity.setAttribute("gltf-model", "url(models/my-cad-model.glb)");
-        modelEntity.setAttribute("scale", "1 1 1");
-        modelEntity.setAttribute("rotation", "0 180 0");
-        // Set default position to ensure the model is visible.
-        modelEntity.setAttribute("position", "0 0 -3");
-        sceneEl.appendChild(modelEntity);
-
-        // When the marker is detected, reparent the model to the marker.
-        marker.addEventListener("markerFound", function () {
-          console.log("markerFound event triggered");
-          indicator.innerText = "Marker detected!";
-          if (modelEntity.parentNode !== marker) {
-            reparentPreserve(modelEntity, marker);
-          }
-        });
-
-        // When the marker is lost, reparent the model back to the scene.
-        marker.addEventListener("markerLost", function () {
-          console.log("markerLost event triggered");
-          indicator.innerText = "Marker not detected";
-          if (modelEntity.parentNode === marker) {
-            reparentPreserve(modelEntity, sceneEl);
-          }
-        });
-      });
-    </script>
   </body>
 </html>
