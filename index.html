@@ -48,7 +48,7 @@
       // we listen for a single click anywhere on the body.
       document.body.addEventListener('click', function () {
         console.log("User gesture received; triggering AR mode.");
-        sceneEl.enterVR();  // This call starts the AR mode (opening the webcam).
+        sceneEl.enterAR();  // This call starts the AR mode (opening the webcam).
       }, { once: true });
     </script>
   </body>
