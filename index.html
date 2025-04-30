@@ -36,17 +36,21 @@
   <style> body { margin:0; overflow:hidden } </style>
 </head>
 <body>
+  <a-assets>
+    <img id="qr-marker-img" src="pattern-hiro.png">
+  </a-assets>
+
   <a-scene
     embedded
     vr-mode-ui="enabled:false"
     renderer="logarithmicDepthBuffer:true"
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
   >
-    <a-marker preset="hiro">
+    <a-marker type="pattern" url="pattern-hiro.patt">
       <a-entity
         id="model"
         gltf-model="models/ColorCorrect.glb"
-        scale="2.8 2.8 2.8"
+        scale="1.5 1.5 1.5"
         rotation="0 0 0"
       ></a-entity>
     </a-marker>
